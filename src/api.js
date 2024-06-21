@@ -1,23 +1,20 @@
 import express from 'express';
 import pkg from 'pg';
-import cors from 'cors';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const { Pool } = pkg;
-const router = express.Router();
 
 const pool = new Pool({
   user: process.env.RDS_USERNAME,
   password: process.env.RDS_PASSWORD,
   host: process.env.RDS_HOST,
   database: process.env.RDS_DATABASE,
-  port: process.env.RDS_PORT || 5432,
+  port: process.env.RDS_PORT || 5432, // Default PostgreSQL port
 });
 
-router.use(express.json());
-router.use(cors());
+const router = express.Router();
 
 router.get('/rooms', async (req, res) => {
   try {
