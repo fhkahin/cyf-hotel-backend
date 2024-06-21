@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# Find the process ID of the running Node.js application and kill it
+# Stop the running Node.js application
 pkill -f "node app.js"
