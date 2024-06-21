@@ -1,0 +1,38 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '20'  # Specify the Node.js version you're using
+
+    - name: Install dependencies
+      run: npm ci  # This is faster and more reliable than npm install for CI environments
+
+    - name: Deploy to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        HOST: ${{ secrets.EC2_HOST }}
+        USER: ${{ secrets.EC2_USER }}  # Typically 'ec2-user' for Amazon Linux or 'ubuntu' for Ubuntu
+      run: |
+        echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        scp -i private_key -o StrictHostKeyChecking=no -r ./* ${USER}@${HOST}:~/app/
+        ssh -i private_key -o StrictHostKeyChecking=no ${USER}@${HOST} '
+          cd ~/app
+          npm ci
+          pm2 stop app || true  # Stop the app if it's running, ignore error if it's not
+          pm2 start app.js --name app || pm2 restart app  # Start the app if not running, otherwise restart
+          pm2 save  # Save the PM2 process list
+        '
+
+    - name: Cleanup
+      run: rm -f private_key
